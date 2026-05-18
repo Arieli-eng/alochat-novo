@@ -31,3 +31,6 @@ app/uploads/*
 
 # Logs
 *.log
+
+# Database
+*.db

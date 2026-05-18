@@ -8,6 +8,8 @@ import os
 
 from data_processor import DataProcessor
 from routes import api
+from database import init_db
+from config_routes import config_bp
 
 
 def create_app():
@@ -23,6 +25,9 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
     app.config['UPLOAD_FOLDER'].mkdir(parents=True, exist_ok=True)
+
+    # Inicializar banco de dados SQLite
+    init_db(app)
 
     processor = DataProcessor()
     print("Inicializando sistema...")
@@ -42,7 +47,9 @@ def create_app():
 
     app.config['DATA_PROCESSOR'] = processor
 
+    # Registrar blueprints
     app.register_blueprint(api)
+    app.register_blueprint(config_bp)
 
     @app.route('/')
     def index():

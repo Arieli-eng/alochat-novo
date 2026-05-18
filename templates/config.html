@@ -39,14 +39,13 @@
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>Cidade Principal</th>
-                                <th>Cidades Vinculadas</th>
+                                <th>Cidades de Atuação</th>
                                 <th>Status</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="credenciadoresTable">
-                            <tr><td colspan="5" style="text-align: center; padding: 40px;">Carregando...</td></tr>
+                            <tr><td colspan="4" style="text-align: center; padding: 40px;">Carregando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -147,17 +146,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="credenciadorCidade">Cidade Principal *</label>
-                        <input type="text" id="credenciadorCidade" class="input" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="credenciadorCidadesVinculadas">Cidades Vinculadas</label>
-                        <select id="credenciadorCidadesVinculadas" class="select" multiple style="height: 120px;">
+                        <label for="credenciadorCidadesVinculadas">Cidades de Atuação *</label>
+                        <select id="credenciadorCidadesVinculadas" class="select" multiple style="height: 150px;" required>
                             <!-- Preenchido dinamicamente -->
                         </select>
                         <small style="color: var(--text-light); margin-top: 4px; display: block;">
-                            Segure Ctrl/Cmd para selecionar múltiplas cidades
+                            Segure Ctrl/Cmd para selecionar múltiplas cidades. Mínimo 1 cidade.
                         </small>
                     </div>
 

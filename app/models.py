@@ -24,13 +24,12 @@ class Credenciador(db.Model):
     """
     Credenciadores que executam procedimentos.
 
-    Podem atuar em múltiplas cidades (relacionamento N:N).
+    Atuam em uma ou múltiplas cidades (relacionamento N:N).
     """
     __tablename__ = 'credenciadores'
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(200), nullable=False)
-    cidade = db.Column(db.String(100), nullable=False)
     ativo = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -46,9 +45,8 @@ class Credenciador(db.Model):
         return {
             'id': self.id,
             'nome': self.nome,
-            'cidade': self.cidade,
             'ativo': self.ativo,
-            'cidades_vinculadas': [c.nome for c in self.cidades_vinculadas],
+            'cidades_vinculadas': [{'id': c.id, 'nome': c.nome, 'estado': c.estado} for c in self.cidades_vinculadas],
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

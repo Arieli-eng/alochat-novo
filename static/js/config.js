@@ -58,7 +58,7 @@ async function loadCredenciadores() {
         tbody.innerHTML = '';
 
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-light);">Nenhum credenciador cadastrado</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-light);">Nenhum credenciador cadastrado</td></tr>';
             return;
         }
 
@@ -67,17 +67,16 @@ async function loadCredenciadores() {
             const statusClass = cred.ativo ? 'status-active' : 'status-inactive';
             const statusText = cred.ativo ? 'Ativo' : 'Inativo';
 
-            // Criar tags visuais para cidades vinculadas
-            let cidadesHtml = '-';
+            // Criar tags visuais para cidades de atuação
+            let cidadesHtml = '<small style="color: var(--text-light);">Nenhuma cidade vinculada</small>';
             if (cred.cidades_vinculadas && cred.cidades_vinculadas.length > 0) {
                 cidadesHtml = '<div class="cidade-tags">' +
-                    cred.cidades_vinculadas.map(c => `<span class="cidade-tag">${c}</span>`).join('') +
+                    cred.cidades_vinculadas.map(c => `<span class="cidade-tag">${c.nome} - ${c.estado}</span>`).join('') +
                     '</div>';
             }
 
             row.innerHTML = `
                 <td><strong>${cred.nome}</strong></td>
-                <td>${cred.cidade}</td>
                 <td>${cidadesHtml}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td class="table-actions">
@@ -108,14 +107,13 @@ async function openCredenciadorModal(id = null) {
                 const cred = data.find(c => c.id === id);
                 if (cred) {
                     document.getElementById('credenciadorNome').value = cred.nome;
-                    document.getElementById('credenciadorCidade').value = cred.cidade;
                     document.getElementById('credenciadorAtivo').checked = cred.ativo;
 
                     // Selecionar cidades vinculadas
                     const select = document.getElementById('credenciadorCidadesVinculadas');
-                    const vinculadas = cred.cidades_vinculadas || [];
+                    const vinculadasIds = (cred.cidades_vinculadas || []).map(c => c.id);
                     Array.from(select.options).forEach(option => {
-                        option.selected = vinculadas.includes(option.text);
+                        option.selected = vinculadasIds.includes(parseInt(option.value));
                     });
                 }
             });
@@ -160,7 +158,6 @@ async function saveCredenciador(event) {
 
     const data = {
         nome: document.getElementById('credenciadorNome').value,
-        cidade: document.getElementById('credenciadorCidade').value,
         ativo: document.getElementById('credenciadorAtivo').checked,
         cidades_ids: cidadesSelecionadas
     };

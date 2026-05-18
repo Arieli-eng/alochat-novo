@@ -37,20 +37,23 @@ def create_credenciador():
     """Cria novo credenciador."""
     data = request.json
 
-    if not data.get('nome') or not data.get('cidade'):
-        return jsonify({'error': 'Nome e cidade são obrigatórios'}), 400
+    if not data.get('nome'):
+        return jsonify({'error': 'Nome é obrigatório'}), 400
 
-    credenciador = Credenciador(
-        nome=data['nome'],
-        cidade=data['cidade']
-    )
+    if not data.get('cidades_ids') or len(data.get('cidades_ids', [])) == 0:
+        return jsonify({'error': 'Selecione pelo menos uma cidade'}), 400
 
-    # Vincular cidades se fornecidas
-    if data.get('cidades_ids'):
-        cidades = CidadeConfig.query.filter(
-            CidadeConfig.id.in_(data['cidades_ids'])
-        ).all()
-        credenciador.cidades_vinculadas = cidades
+    credenciador = Credenciador(nome=data['nome'])
+
+    # Vincular cidades
+    cidades = CidadeConfig.query.filter(
+        CidadeConfig.id.in_(data['cidades_ids'])
+    ).all()
+
+    if not cidades:
+        return jsonify({'error': 'Nenhuma cidade válida encontrada'}), 400
+
+    credenciador.cidades_vinculadas = cidades
 
     db.session.add(credenciador)
     db.session.commit()
@@ -65,14 +68,20 @@ def update_credenciador(id):
     data = request.json
 
     credenciador.nome = data.get('nome', credenciador.nome)
-    credenciador.cidade = data.get('cidade', credenciador.cidade)
     credenciador.ativo = data.get('ativo', credenciador.ativo)
 
     # Atualizar cidades vinculadas
     if 'cidades_ids' in data:
+        if len(data['cidades_ids']) == 0:
+            return jsonify({'error': 'Selecione pelo menos uma cidade'}), 400
+
         cidades = CidadeConfig.query.filter(
             CidadeConfig.id.in_(data['cidades_ids'])
         ).all()
+
+        if not cidades:
+            return jsonify({'error': 'Nenhuma cidade válida encontrada'}), 400
+
         credenciador.cidades_vinculadas = cidades
 
     db.session.commit()

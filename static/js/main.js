@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Event listeners
 function setupEventListeners() {
     document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 500));
+    document.getElementById('cidadeFilter').addEventListener('change', onCidadeChange);
 }
 
 // Utility: Debounce
@@ -37,6 +38,7 @@ async function loadInitialData() {
             loadStats(),
             loadCategorias(),
             loadPrioridades(),
+            loadCidades(),
             loadProcedimentos()
         ]);
     } catch (error) {
@@ -89,6 +91,51 @@ async function loadPrioridades() {
     });
 }
 
+// Carrega cidades para o filtro
+async function loadCidades() {
+    const response = await fetch('/api/cidades');
+    const data = await response.json();
+
+    const select = document.getElementById('cidadeFilter');
+    select.innerHTML = '<option value="">Todas as Cidades</option>';
+
+    data.cidades.forEach(cidade => {
+        const option = document.createElement('option');
+        option.value = cidade.cidade;
+        option.textContent = `${cidade.cidade} (${cidade.num_parceiros} parceiros)`;
+        select.appendChild(option);
+    });
+}
+
+// Carrega bairros quando cidade é selecionada
+async function onCidadeChange() {
+    const cidade = document.getElementById('cidadeFilter').value;
+    const bairroSelect = document.getElementById('bairroFilter');
+
+    bairroSelect.innerHTML = '<option value="">Todos os Bairros</option>';
+
+    if (!cidade) {
+        bairroSelect.disabled = true;
+        return;
+    }
+
+    bairroSelect.disabled = false;
+
+    try {
+        const response = await fetch(`/api/bairros?cidade=${encodeURIComponent(cidade)}`);
+        const data = await response.json();
+
+        data.bairros.forEach(bairro => {
+            const option = document.createElement('option');
+            option.value = bairro.bairro;
+            option.textContent = `${bairro.bairro} (${bairro.num_parceiros} parceiros)`;
+            bairroSelect.appendChild(option);
+        });
+    } catch (error) {
+        showNotification('Erro ao carregar bairros: ' + error.message, 'error');
+    }
+}
+
 // Carrega procedimentos
 async function loadProcedimentos() {
     const params = new URLSearchParams();
@@ -101,6 +148,12 @@ async function loadProcedimentos() {
 
     const search = document.getElementById('searchInput').value;
     if (search) params.append('search', search);
+
+    const cidade = document.getElementById('cidadeFilter').value;
+    if (cidade) params.append('cidade', cidade);
+
+    const bairro = document.getElementById('bairroFilter').value;
+    if (bairro) params.append('bairro', bairro);
 
     const response = await fetch(`/api/procedimentos?${params.toString()}`);
     const data = await response.json();
@@ -137,10 +190,21 @@ function renderTable() {
         const row = document.createElement('tr');
 
         const prioridadeClass = getPrioridadeClass(proc['Grau de Importância']);
-        const parceirosClass = proc.num_parceiros > 0 ? 'badge-success' : 'badge-danger';
-        const parceirosText = proc.num_parceiros > 0
-            ? `${proc.num_parceiros} disponível(is)`
+
+        const numParceiros = proc.num_parceiros_regiao !== undefined
+            ? proc.num_parceiros_regiao
+            : proc.num_parceiros;
+
+        const parceirosClass = numParceiros > 0 ? 'badge-success' : 'badge-danger';
+        const parceirosText = numParceiros > 0
+            ? `${numParceiros} disponível(is)`
             : 'Nenhum';
+
+        const cidade = document.getElementById('cidadeFilter').value;
+        const bairro = document.getElementById('bairroFilter').value;
+        const regiaoInfo = (cidade || bairro) && proc.num_parceiros_regiao !== undefined
+            ? ` <small style="color: #64748b;">(${proc.num_parceiros} no total)</small>`
+            : '';
 
         row.innerHTML = `
             <td><code>${proc['Código Principal']}</code></td>
@@ -148,12 +212,12 @@ function renderTable() {
             <td>${proc['Categoria']}</td>
             <td><strong>${proc['Contagem'].toLocaleString('pt-BR')}</strong></td>
             <td><span class="badge ${prioridadeClass}">${proc['Grau de Importância']}</span></td>
-            <td><span class="badge ${parceirosClass}">${parceirosText}</span></td>
+            <td><span class="badge ${parceirosClass}">${parceirosText}${regiaoInfo}</span></td>
             <td>
                 <button
                     class="btn btn-primary btn-small"
                     onclick="viewParceiros(${proc.id})"
-                    ${proc.num_parceiros === 0 ? 'disabled' : ''}
+                    ${numParceiros === 0 ? 'disabled' : ''}
                 >
                     Ver Parceiros
                 </button>
@@ -250,6 +314,9 @@ function clearFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('categoriaFilter').value = '';
     document.getElementById('prioridadeFilter').value = '';
+    document.getElementById('cidadeFilter').value = '';
+    document.getElementById('bairroFilter').value = '';
+    document.getElementById('bairroFilter').disabled = true;
     applyFilters();
 }
 

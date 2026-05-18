@@ -102,12 +102,18 @@ body {
 
 .filters-group {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto auto;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto auto;
     gap: 12px;
     align-items: center;
 }
 
-@media (max-width: 968px) {
+@media (max-width: 1200px) {
+    .filters-group {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
     .filters-group {
         grid-template-columns: 1fr;
     }

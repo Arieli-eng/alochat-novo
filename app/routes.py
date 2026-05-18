@@ -19,6 +19,8 @@ def get_procedimentos():
     Query params:
         - categoria: filtrar por categoria
         - prioridade: filtrar por grau de importância
+        - cidade: filtrar procedimentos disponíveis em uma cidade
+        - bairro: filtrar procedimentos disponíveis em um bairro
         - limit: limitar número de resultados
         - search: busca por nome ou código
     """
@@ -46,6 +48,32 @@ def get_procedimentos():
         )
         df = df[mask]
 
+    cidade = request.args.get('cidade')
+    bairro = request.args.get('bairro')
+
+    if cidade or bairro:
+        proc_ids_com_localizacao = set()
+
+        for proc_id, matches in processor.matches.items():
+            for match in matches:
+                cidade_match = cidade and match.get('cidade') == cidade
+                bairro_match = bairro and match.get('bairro') == bairro
+
+                if cidade and not bairro:
+                    if cidade_match:
+                        proc_ids_com_localizacao.add(int(proc_id))
+                        break
+                elif cidade and bairro:
+                    if cidade_match and bairro_match:
+                        proc_ids_com_localizacao.add(int(proc_id))
+                        break
+                elif bairro:
+                    if bairro_match:
+                        proc_ids_com_localizacao.add(int(proc_id))
+                        break
+
+        df = df[df['id'].isin(proc_ids_com_localizacao)]
+
     limit = request.args.get('limit', type=int)
     if limit:
         df = df.head(limit)
@@ -54,6 +82,15 @@ def get_procedimentos():
     df_enriched['num_parceiros'] = df_enriched['id'].apply(
         lambda x: len(processor.matches.get(str(x), []))
     )
+
+    if cidade or bairro:
+        df_enriched['num_parceiros_regiao'] = df_enriched['id'].apply(
+            lambda x: len([
+                m for m in processor.matches.get(str(x), [])
+                if (not cidade or m.get('cidade') == cidade) and
+                   (not bairro or m.get('bairro') == bairro)
+            ])
+        )
 
     result = df_enriched.to_dict(orient='records')
 
@@ -151,6 +188,69 @@ def get_prioridades():
     prioridades = processor.procedimentos_df['Grau de Importância'].unique().tolist()
 
     return jsonify({'prioridades': prioridades})
+
+
+@api.route('/cidades', methods=['GET'])
+def get_cidades():
+    """
+    GET /api/cidades
+    Retorna lista de cidades disponíveis com contagem de parceiros.
+    """
+    processor = current_app.config['DATA_PROCESSOR']
+
+    if processor.parceiros_df is None:
+        return jsonify({'error': 'Dados não carregados'}), 500
+
+    cidades_grouped = processor.parceiros_df.groupby('CIDADE').agg({
+        'PARCEIRO': 'nunique',
+        'PROCEDIMENTO': 'count'
+    }).reset_index()
+
+    cidades_grouped.columns = ['cidade', 'num_parceiros', 'num_procedimentos']
+    cidades_grouped = cidades_grouped.sort_values('num_procedimentos', ascending=False)
+
+    result = cidades_grouped.to_dict(orient='records')
+
+    return jsonify({
+        'total': len(result),
+        'cidades': result
+    })
+
+
+@api.route('/bairros', methods=['GET'])
+def get_bairros():
+    """
+    GET /api/bairros
+    Retorna lista de bairros disponíveis, opcionalmente filtrados por cidade.
+
+    Query params:
+        - cidade: filtrar bairros de uma cidade específica
+    """
+    processor = current_app.config['DATA_PROCESSOR']
+
+    if processor.parceiros_df is None:
+        return jsonify({'error': 'Dados não carregados'}), 500
+
+    df = processor.parceiros_df.copy()
+
+    cidade = request.args.get('cidade')
+    if cidade:
+        df = df[df['CIDADE'] == cidade]
+
+    bairros_grouped = df.groupby(['CIDADE', 'BAIRRO']).agg({
+        'PARCEIRO': 'nunique',
+        'PROCEDIMENTO': 'count'
+    }).reset_index()
+
+    bairros_grouped.columns = ['cidade', 'bairro', 'num_parceiros', 'num_procedimentos']
+    bairros_grouped = bairros_grouped.sort_values('num_procedimentos', ascending=False)
+
+    result = bairros_grouped.to_dict(orient='records')
+
+    return jsonify({
+        'total': len(result),
+        'bairros': result
+    })
 
 
 @api.route('/upload/procedimentos', methods=['POST'])

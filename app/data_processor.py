@@ -99,6 +99,52 @@ class DataProcessor:
         """Calcula similaridade entre dois textos usando SequenceMatcher."""
         return SequenceMatcher(None, texto1, texto2).ratio()
 
+    def _is_codigo_generico(self, codigos: List[str], parceiros_df: pd.DataFrame) -> bool:
+        """Verifica se um código aparece em muitos procedimentos diferentes (código genérico)."""
+        for codigo in codigos:
+            count = len(parceiros_df[parceiros_df['COD_INTERNO'] == codigo])
+            if count > 20:
+                return True
+        return False
+
+    @staticmethod
+    def _extrair_especialidade(texto: str) -> str:
+        """Extrai a especialidade médica do nome do procedimento."""
+        texto_lower = texto.lower()
+
+        match = re.search(r'[-–]\s*([a-záàâãéèêíïóôõöúçñ\s]+)\s*\(([^)]+)\)', texto_lower)
+        if match:
+            especialidade_antes = match.group(1).strip()
+            especialidade_dentro = match.group(2).strip()
+
+            return especialidade_dentro if len(especialidade_dentro) > 3 else especialidade_antes
+
+        match2 = re.search(r'[-–]\s*([a-záàâãéèêíïóôõöúçñ\s]+)$', texto_lower)
+        if match2:
+            return match2.group(1).strip()
+
+        return ''
+
+    def _match_especialidade(self, proc_nome: str, parc_nome: str) -> bool:
+        """Verifica se as especialidades dos procedimentos são compatíveis."""
+        proc_esp = self._extrair_especialidade(proc_nome)
+        parc_esp = self._extrair_especialidade(parc_nome)
+
+        if not proc_esp or not parc_esp:
+            return False
+
+        proc_esp_norm = self.normalizar_texto(proc_esp)
+        parc_esp_norm = self.normalizar_texto(parc_esp)
+
+        if 'ginecolog' in proc_esp_norm and 'obstetri' in proc_esp_norm:
+            return 'ginecolog' in parc_esp_norm or 'obstetri' in parc_esp_norm
+
+        if 'clinico geral' in parc_esp_norm or 'clinica medica' in parc_esp_norm:
+            return False
+
+        similaridade = self.calcular_similaridade(proc_esp_norm, parc_esp_norm)
+        return similaridade >= 0.6
+
     def match_procedimento_com_parceiros(
         self,
         proc_id: int,
@@ -109,7 +155,7 @@ class DataProcessor:
         Encontra parceiros que oferecem um procedimento específico.
 
         Estratégia de matching em 3 níveis:
-        1. Match exato por código
+        1. Match exato por código + validação de similaridade de nome
         2. Match fuzzy por nome (threshold 0.8)
         3. Match por categoria semântica
 
@@ -122,26 +168,42 @@ class DataProcessor:
             return resultados
 
         codigos = self.extrair_codigos(proc_codigo)
+        proc_norm = self.normalizar_texto(proc_nome)
+
+        codigo_generico = self._is_codigo_generico(codigos, self.parceiros_df)
 
         for codigo in codigos:
             matches = self.parceiros_df[self.parceiros_df['COD_INTERNO'] == codigo]
 
             for _, row in matches.iterrows():
-                resultados.append({
-                    'parceiro': row['PARCEIRO'],
-                    'cidade': row['CIDADE'],
-                    'bairro': row['BAIRRO'],
-                    'procedimento_nome': row['PROCEDIMENTO'],
-                    'cod_interno': row['COD_INTERNO'],
-                    'repasse': float(row['REPASSE']) if pd.notna(row['REPASSE']) else None,
-                    'final': float(row['FINAL']) if pd.notna(row['FINAL']) else None,
-                    'match_type': 'exact',
-                    'score': 100
-                })
+                parc_norm = self.normalizar_texto(row['PROCEDIMENTO'])
+
+                if codigo_generico:
+                    if not self._match_especialidade(proc_nome, row['PROCEDIMENTO']):
+                        continue
+
+                similaridade_nome = self.calcular_similaridade(proc_norm, parc_norm)
+
+                threshold = 0.7 if codigo_generico else 0.5
+
+                if similaridade_nome >= threshold:
+                    score = 100 if similaridade_nome >= 0.9 else int(similaridade_nome * 100)
+                    match_type = 'exact_code_with_name_validation'
+
+                    resultados.append({
+                        'parceiro': row['PARCEIRO'],
+                        'cidade': row['CIDADE'],
+                        'bairro': row['BAIRRO'],
+                        'procedimento_nome': row['PROCEDIMENTO'],
+                        'cod_interno': row['COD_INTERNO'],
+                        'repasse': float(row['REPASSE']) if pd.notna(row['REPASSE']) else None,
+                        'final': float(row['FINAL']) if pd.notna(row['FINAL']) else None,
+                        'match_type': match_type,
+                        'score': score,
+                        'similaridade_nome': round(similaridade_nome * 100, 1)
+                    })
 
         if not resultados:
-            proc_norm = self.normalizar_texto(proc_nome)
-
             for _, row in self.parceiros_df.iterrows():
                 parc_norm = self.normalizar_texto(row['PROCEDIMENTO'])
 
@@ -160,7 +222,8 @@ class DataProcessor:
                         'repasse': float(row['REPASSE']) if pd.notna(row['REPASSE']) else None,
                         'final': float(row['FINAL']) if pd.notna(row['FINAL']) else None,
                         'match_type': 'fuzzy',
-                        'score': int(similaridade * 100)
+                        'score': int(similaridade * 100),
+                        'similaridade_nome': round(similaridade * 100, 1)
                     })
 
         resultados = sorted(resultados, key=lambda x: x['score'], reverse=True)

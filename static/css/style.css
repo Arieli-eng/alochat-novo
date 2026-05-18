@@ -447,6 +447,22 @@ body {
     color: #92400e;
 }
 
+.score-60 {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.similarity-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
 .parceiro-info {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

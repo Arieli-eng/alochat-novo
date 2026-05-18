@@ -270,43 +270,52 @@ async function viewParceiros(procId) {
                 </div>
             `;
         } else {
-            modalBody.innerHTML = data.parceiros.map(parc => `
-                <div class="parceiro-card">
-                    <div class="parceiro-header">
-                        <div class="parceiro-nome">${parc.parceiro}</div>
-                        <div class="match-score">
-                            <span class="score-badge ${parc.score === 100 ? 'score-100' : 'score-80'}">
-                                ${parc.match_type === 'exact' ? 'Match Exato' : 'Match Fuzzy'}
-                                (${parc.score}%)
-                            </span>
+            modalBody.innerHTML = data.parceiros.map(parc => {
+                const matchLabel = getMatchLabel(parc.match_type, parc.score);
+                const scoreClass = parc.score >= 90 ? 'score-100' : parc.score >= 70 ? 'score-80' : 'score-60';
+
+                return `
+                    <div class="parceiro-card">
+                        <div class="parceiro-header">
+                            <div class="parceiro-nome">${parc.parceiro}</div>
+                            <div class="match-score">
+                                <span class="score-badge ${scoreClass}">
+                                    ${matchLabel}
+                                </span>
+                                ${parc.similaridade_nome ? `
+                                    <span class="similarity-badge">
+                                        Similaridade: ${parc.similaridade_nome}%
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="parceiro-info">
+                            <div class="info-item">
+                                <strong>Procedimento:</strong> ${parc.procedimento_nome}
+                            </div>
+                            <div class="info-item">
+                                <strong>Código Interno:</strong> ${parc.cod_interno}
+                            </div>
+                            <div class="info-item">
+                                <strong>Cidade:</strong> ${parc.cidade}
+                            </div>
+                            <div class="info-item">
+                                <strong>Bairro:</strong> ${parc.bairro}
+                            </div>
+                            ${parc.repasse ? `
+                                <div class="info-item">
+                                    <strong>Repasse:</strong> R$ ${parc.repasse.toFixed(2)}
+                                </div>
+                            ` : ''}
+                            ${parc.final ? `
+                                <div class="info-item">
+                                    <strong>Final:</strong> R$ ${parc.final.toFixed(2)}
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
-                    <div class="parceiro-info">
-                        <div class="info-item">
-                            <strong>Procedimento:</strong> ${parc.procedimento_nome}
-                        </div>
-                        <div class="info-item">
-                            <strong>Código Interno:</strong> ${parc.cod_interno}
-                        </div>
-                        <div class="info-item">
-                            <strong>Cidade:</strong> ${parc.cidade}
-                        </div>
-                        <div class="info-item">
-                            <strong>Bairro:</strong> ${parc.bairro}
-                        </div>
-                        ${parc.repasse ? `
-                            <div class="info-item">
-                                <strong>Repasse:</strong> R$ ${parc.repasse.toFixed(2)}
-                            </div>
-                        ` : ''}
-                        ${parc.final ? `
-                            <div class="info-item">
-                                <strong>Final:</strong> R$ ${parc.final.toFixed(2)}
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         openModal();
@@ -364,6 +373,18 @@ function getPrioridadeClass(prioridade) {
         'Baixa Prioridade': 'badge-prioridade-baixa'
     };
     return map[prioridade] || 'badge-info';
+}
+
+function getMatchLabel(matchType, score) {
+    if (matchType === 'exact_code_with_name_validation') {
+        if (score >= 90) return 'Match Exato (Código + Nome)';
+        if (score >= 70) return 'Match por Código';
+        return 'Match Parcial';
+    }
+    if (matchType === 'fuzzy') {
+        return 'Match por Nome';
+    }
+    return 'Match';
 }
 
 function showLoading(show) {

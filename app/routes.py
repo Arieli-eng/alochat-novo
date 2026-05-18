@@ -105,10 +105,28 @@ def get_parceiros_by_procedimento(proc_id):
     """
     GET /api/procedimentos/:id/parceiros
     Retorna parceiros disponíveis para um procedimento específico.
+
+    Query params:
+        - cidade: filtrar parceiros por cidade
+        - bairro: filtrar parceiros por bairro
     """
     processor = current_app.config['DATA_PROCESSOR']
 
     matches = processor.matches.get(str(proc_id), [])
+
+    cidade = request.args.get('cidade')
+    bairro = request.args.get('bairro')
+
+    if cidade or bairro:
+        filtered_matches = []
+        for match in matches:
+            cidade_match = not cidade or match.get('cidade') == cidade
+            bairro_match = not bairro or match.get('bairro') == bairro
+
+            if cidade_match and bairro_match:
+                filtered_matches.append(match)
+
+        matches = filtered_matches
 
     return jsonify({
         'procedimento_id': proc_id,

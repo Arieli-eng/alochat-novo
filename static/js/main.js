@@ -325,18 +325,46 @@ async function viewParceiros(procId) {
     showLoading(true);
 
     try {
-        const response = await fetch(`/api/procedimentos/${procId}/parceiros`);
+        const params = new URLSearchParams();
+
+        const cidade = document.getElementById('cidadeFilter').value;
+        if (cidade) params.append('cidade', cidade);
+
+        const bairro = document.getElementById('bairroFilter').value;
+        if (bairro) params.append('bairro', bairro);
+
+        const url = `/api/procedimentos/${procId}/parceiros${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url);
         const data = await response.json();
 
         const modalBody = document.getElementById('modalBody');
 
+        const cidade = document.getElementById('cidadeFilter').value;
+        const bairro = document.getElementById('bairroFilter').value;
+        const filtroAtivo = cidade || bairro;
+
+        let headerInfo = '';
+        if (filtroAtivo) {
+            const localizacao = bairro ? `${cidade} - ${bairro}` : cidade;
+            headerInfo = `
+                <div style="background: #e8f5e9; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
+                    <strong>📍 Filtrado por localização:</strong> ${localizacao}
+                </div>
+            `;
+        }
+
         if (data.parceiros.length === 0) {
-            modalBody.innerHTML = `
+            const mensagem = filtroAtivo
+                ? `Nenhum parceiro disponível nesta região para este procedimento`
+                : `Nenhum parceiro disponível para este procedimento`;
+
+            modalBody.innerHTML = headerInfo + `
                 <div class="no-parceiros">
-                    <p>Nenhum parceiro disponível para este procedimento</p>
+                    <p>${mensagem}</p>
                 </div>
             `;
         } else {
+            modalBody.innerHTML = headerInfo + data.parceiros.map(parc => {
             modalBody.innerHTML = data.parceiros.map(parc => {
                 const matchLabel = getMatchLabel(parc.match_type, parc.score);
                 const scoreClass = parc.score >= 90 ? 'score-100' : parc.score >= 70 ? 'score-80' : 'score-60';
@@ -391,6 +419,7 @@ async function viewParceiros(procId) {
     } finally {
         showLoading(false);
     }
+}
 }
 
 // Upload de arquivo

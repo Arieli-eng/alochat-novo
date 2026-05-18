@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AloChat - Análise de Procedimentos e Parceiros</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>AloChat - Sistema de Procedimentos</h1>
+            <p>Análise de procedimentos com maior demanda e disponibilidade de parceiros</p>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid" id="statsCards">
+            <div class="stat-card">
+                <div class="stat-value" id="statTotalProc">-</div>
+                <div class="stat-label">Total Procedimentos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statComMatch">-</div>
+                <div class="stat-label">Com Parceiros</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statCobertura">-</div>
+                <div class="stat-label">Cobertura</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statParceiros">-</div>
+                <div class="stat-label">Parceiros Ativos</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="filters-group">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="input"
+                    placeholder="Buscar por nome ou código..."
+                >
+
+                <select id="categoriaFilter" class="select">
+                    <option value="">Todas as Categorias</option>
+                </select>
+
+                <select id="prioridadeFilter" class="select">
+                    <option value="">Todas as Prioridades</option>
+                </select>
+
+                <button class="btn btn-primary" onclick="applyFilters()">Filtrar</button>
+                <button class="btn btn-secondary" onclick="clearFilters()">Limpar</button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Procedimento</th>
+                        <th>Categoria</th>
+                        <th>Contagem</th>
+                        <th>Prioridade</th>
+                        <th>Parceiros</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Dados serão inseridos via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination">
+            <!-- Botões de paginação serão inseridos via JavaScript -->
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h3>Atualizar Dados</h3>
+            <div class="upload-group">
+                <div class="upload-item">
+                    <label>Arquivo de Procedimentos (.xlsx)</label>
+                    <input type="file" id="uploadProcedimentos" accept=".xlsx,.xls">
+                    <button class="btn btn-primary" onclick="uploadFile('procedimentos')">Upload</button>
+                </div>
+                <div class="upload-item">
+                    <label>Arquivo de Parceiros (.xlsx)</label>
+                    <input type="file" id="uploadParceiros" accept=".xlsx,.xls">
+                    <button class="btn btn-primary" onclick="uploadFile('parceiros')">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Parceiros -->
+    <div id="modalParceiros" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Parceiros Disponíveis</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Conteúdo será inserido via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificação -->
+    <div id="notification" class="notification"></div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

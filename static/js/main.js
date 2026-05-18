@@ -339,8 +339,6 @@ async function viewParceiros(procId) {
 
         const modalBody = document.getElementById('modalBody');
 
-        const cidade = document.getElementById('cidadeFilter').value;
-        const bairro = document.getElementById('bairroFilter').value;
         const filtroAtivo = cidade || bairro;
 
         let headerInfo = '';
@@ -365,7 +363,6 @@ async function viewParceiros(procId) {
             `;
         } else {
             modalBody.innerHTML = headerInfo + data.parceiros.map(parc => {
-            modalBody.innerHTML = data.parceiros.map(parc => {
                 const matchLabel = getMatchLabel(parc.match_type, parc.score);
                 const scoreClass = parc.score >= 90 ? 'score-100' : parc.score >= 70 ? 'score-80' : 'score-60';
 
@@ -419,7 +416,6 @@ async function viewParceiros(procId) {
     } finally {
         showLoading(false);
     }
-}
 }
 
 // Upload de arquivo

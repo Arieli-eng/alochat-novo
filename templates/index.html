@@ -3,134 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AloChat - Análise de Procedimentos e Parceiros</title>
+    <title>AloChat - Sistema de Procedimentos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/config.css') }}">
 </head>
-<body>
-    <div class="container">
+<body class="config-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">AC</div>
+                <span class="logo-text">AloChat</span>
+            </div>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar">A</div>
+            <div class="user-info">
+                <div class="user-name">Arieti</div>
+                <div class="user-role">Gestora</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">GESTÃO</div>
+                <a href="/" class="nav-item active">
+                    <span class="nav-icon">⌂</span>
+                    <span class="nav-text">Procedimentos</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">CONFIGURAÇÕES</div>
+                <a href="/config" class="nav-item">
+                    <span class="nav-icon">⚙</span>
+                    <span class="nav-text">Configurações</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
         <!-- Header -->
-        <header class="header">
-            <h1>AloChat - Sistema de Procedimentos</h1>
-            <p>Análise de procedimentos com maior demanda e disponibilidade de parceiros</p>
-            <nav style="margin-top: 16px;">
-                <a href="/config" style="color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; background: rgba(255, 255, 255, 0.2); transition: background 0.2s; display: inline-block;">⚙️ Configurações</a>
-            </nav>
+        <header class="content-header">
+            <h1 class="page-title">Procedimentos</h1>
         </header>
 
-        <!-- Stats Cards -->
-        <div class="stats-grid" id="statsCards">
-            <div class="stat-card">
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-item">
                 <div class="stat-value" id="statTotalProc">-</div>
-                <div class="stat-label">Total Procedimentos</div>
+                <div class="stat-label">Total</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-item">
                 <div class="stat-value" id="statComMatch">-</div>
                 <div class="stat-label">Com Parceiros</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-item">
                 <div class="stat-value" id="statCobertura">-</div>
                 <div class="stat-label">Cobertura</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-item">
                 <div class="stat-value" id="statParceiros">-</div>
-                <div class="stat-label">Parceiros Ativos</div>
+                <div class="stat-label">Parceiros</div>
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="filters-section">
-            <div class="filters-group">
-                <input
-                    type="text"
-                    id="searchInput"
-                    class="input"
-                    placeholder="Buscar por nome ou código..."
-                >
-
-                <select id="categoriaFilter" class="select">
-                    <option value="">Todas as Categorias</option>
-                </select>
-
-                <select id="prioridadeFilter" class="select">
-                    <option value="">Todas as Prioridades</option>
-                </select>
-
-                <select id="cidadeFilter" class="select">
-                    <option value="">Todas as Cidades</option>
-                </select>
-
-                <select id="bairroFilter" class="select">
-                    <option value="">Todos os Bairros</option>
-                </select>
-
-                <button class="btn btn-primary" onclick="applyFilters()">Filtrar</button>
-                <button class="btn btn-secondary" onclick="clearFilters()">Limpar</button>
+        <!-- Filters and Search -->
+        <div class="content-toolbar">
+            <div class="search-box">
+                <span class="search-icon">⌕</span>
+                <input type="text" id="searchInput" placeholder="Buscar por nome ou código..." class="search-input">
             </div>
+
+            <select id="categoriaFilter" class="filter-select">
+                <option value="">Todas as Categorias</option>
+            </select>
+
+            <select id="prioridadeFilter" class="filter-select">
+                <option value="">Todas as Prioridades</option>
+            </select>
+
+            <select id="cidadeFilter" class="filter-select">
+                <option value="">Todas as Cidades</option>
+            </select>
+
+            <select id="bairroFilter" class="filter-select" disabled>
+                <option value="">Todos os Bairros</option>
+            </select>
+
+            <button class="btn-filter" onclick="applyFilters()">Filtrar</button>
+            <button class="btn-clear" onclick="clearFilters()">Limpar</button>
         </div>
 
-        <!-- Loading -->
-        <div id="loading" class="loading" style="display: none;">
-            <div class="spinner"></div>
-            <p>Carregando dados...</p>
-        </div>
-
-        <!-- Table -->
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Procedimento</th>
-                        <th>Categoria</th>
-                        <th>Contagem</th>
-                        <th>Prioridade</th>
-                        <th>Parceiros</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <!-- Dados serão inseridos via JavaScript -->
-                </tbody>
-            </table>
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <div class="items-list" id="tableBody">
+                <!-- Será preenchido dinamicamente -->
+            </div>
         </div>
 
         <!-- Pagination -->
-        <div class="pagination" id="pagination">
-            <!-- Botões de paginação serão inseridos via JavaScript -->
-        </div>
-
-        <!-- Upload Section -->
-        <div class="upload-section">
-            <h3>Atualizar Dados</h3>
-            <div class="upload-group">
-                <div class="upload-item">
-                    <label>Arquivo de Procedimentos (.xlsx)</label>
-                    <input type="file" id="uploadProcedimentos" accept=".xlsx,.xls">
-                    <button class="btn btn-primary" onclick="uploadFile('procedimentos')">Upload</button>
-                </div>
-                <div class="upload-item">
-                    <label>Arquivo de Parceiros (.xlsx)</label>
-                    <input type="file" id="uploadParceiros" accept=".xlsx,.xls">
-                    <button class="btn btn-primary" onclick="uploadFile('parceiros')">Upload</button>
-                </div>
-            </div>
-        </div>
-    </div>
+        <div class="pagination" id="pagination"></div>
+    </main>
 
     <!-- Modal de Parceiros -->
     <div id="modalParceiros" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal-modern modal-large">
+            <div class="modal-header-modern">
                 <h2>Parceiros Disponíveis</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close-modern" onclick="closeModal()">&times;</button>
             </div>
-            <div class="modal-body" id="modalBody">
+            <div class="modal-body-modern" id="modalBody">
                 <!-- Conteúdo será inserido via JavaScript -->
             </div>
         </div>
     </div>
 
-    <!-- Notificação -->
+    <!-- Loading -->
+    <div id="loading" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Carregando...</p>
+    </div>
+
+    <!-- Notification -->
     <div id="notification" class="notification"></div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

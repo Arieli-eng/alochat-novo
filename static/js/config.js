@@ -101,7 +101,7 @@ function renderContent() {
     if (data.length === 0) {
         contentArea.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">📋</div>
+                <div class="empty-icon">○</div>
                 <div class="empty-text">Nenhum registro encontrado</div>
                 <div class="empty-subtext">Clique em "+ Novo Cadastro" para adicionar</div>
             </div>
@@ -158,8 +158,8 @@ function renderCredenciadorCard(cred) {
         </div>
         <span class="status-badge ${statusClass}">${statusText}</span>
         <div class="item-actions">
-            <button class="btn-icon btn-edit" onclick="editCredenciador(${cred.id})" title="Editar">✏️</button>
-            <button class="btn-icon btn-delete" onclick="deleteCredenciador(${cred.id}, '${cred.nome}')" title="Excluir">🗑️</button>
+            <button class="btn-icon btn-edit" onclick="editCredenciador(${cred.id})" title="Editar">✎</button>
+            <button class="btn-icon btn-delete" onclick="deleteCredenciador(${cred.id}, '${cred.nome}')" title="Excluir">✕</button>
         </div>
     `;
 }
@@ -177,8 +177,8 @@ function renderResponsavelCard(resp) {
         </div>
         <span class="status-badge ${statusClass}">${statusText}</span>
         <div class="item-actions">
-            <button class="btn-icon btn-edit" onclick="editResponsavel(${resp.id})" title="Editar">✏️</button>
-            <button class="btn-icon btn-delete" onclick="deleteResponsavel(${resp.id}, '${resp.nome}')" title="Excluir">🗑️</button>
+            <button class="btn-icon btn-edit" onclick="editResponsavel(${resp.id})" title="Editar">✎</button>
+            <button class="btn-icon btn-delete" onclick="deleteResponsavel(${resp.id}, '${resp.nome}')" title="Excluir">✕</button>
         </div>
     `;
 }
@@ -197,8 +197,8 @@ function renderCidadeCard(cidade) {
         </div>
         <span class="status-badge ${statusClass}">${statusText}</span>
         <div class="item-actions">
-            <button class="btn-icon btn-edit" onclick="editCidade(${cidade.id})" title="Editar">✏️</button>
-            <button class="btn-icon btn-delete" onclick="deleteCidade(${cidade.id}, '${cidade.nome}')" title="Excluir">🗑️</button>
+            <button class="btn-icon btn-edit" onclick="editCidade(${cidade.id})" title="Editar">✎</button>
+            <button class="btn-icon btn-delete" onclick="deleteCidade(${cidade.id}, '${cidade.nome}')" title="Excluir">✕</button>
         </div>
     `;
 }
@@ -218,7 +218,7 @@ function renderSLACard(sla) {
             </div>
         </div>
         <div class="item-actions">
-            <button class="btn-icon btn-edit" onclick="editSLA(${sla.id})" title="Editar">✏️</button>
+            <button class="btn-icon btn-edit" onclick="editSLA(${sla.id})" title="Editar">✎</button>
         </div>
     `;
 }

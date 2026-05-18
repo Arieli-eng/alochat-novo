@@ -177,17 +177,18 @@ function renderTable() {
 
     if (items.length === 0) {
         tbody.innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-light);">
-                    Nenhum procedimento encontrado
-                </td>
-            </tr>
+            <div class="empty-state">
+                <div class="empty-icon">○</div>
+                <div class="empty-text">Nenhum procedimento encontrado</div>
+                <div class="empty-subtext">Ajuste os filtros para ver os resultados</div>
+            </div>
         `;
         return;
     }
 
     items.forEach(proc => {
-        const row = document.createElement('tr');
+        const card = document.createElement('div');
+        card.className = 'procedimento-card';
 
         const prioridadeClass = getPrioridadeClass(proc['Grau de Importância']);
 
@@ -195,36 +196,32 @@ function renderTable() {
             ? proc.num_parceiros_regiao
             : proc.num_parceiros;
 
-        const parceirosClass = numParceiros > 0 ? 'badge-success' : 'badge-danger';
+        const parceirosClass = numParceiros > 0 ? 'status-active' : 'status-inactive';
         const parceirosText = numParceiros > 0
-            ? `${numParceiros} disponível(is)`
-            : 'Nenhum';
+            ? `${numParceiros} parceiro(s)`
+            : 'Sem parceiros';
 
-        const cidade = document.getElementById('cidadeFilter').value;
-        const bairro = document.getElementById('bairroFilter').value;
-        const regiaoInfo = (cidade || bairro) && proc.num_parceiros_regiao !== undefined
-            ? ` <small style="color: #64748b;">(${proc.num_parceiros} no total)</small>`
-            : '';
-
-        row.innerHTML = `
-            <td><code>${proc['Código Principal']}</code></td>
-            <td>${proc['Procedimento']}</td>
-            <td>${proc['Categoria']}</td>
-            <td><strong>${proc['Contagem'].toLocaleString('pt-BR')}</strong></td>
-            <td><span class="badge ${prioridadeClass}">${proc['Grau de Importância']}</span></td>
-            <td><span class="badge ${parceirosClass}">${parceirosText}${regiaoInfo}</span></td>
-            <td>
-                <button
-                    class="btn btn-primary btn-small"
-                    onclick="viewParceiros(${proc.id})"
-                    ${numParceiros === 0 ? 'disabled' : ''}
-                >
-                    Ver Parceiros
-                </button>
-            </td>
+        card.innerHTML = `
+            <div class="proc-code">${proc['Código Principal']}</div>
+            <div class="proc-info">
+                <div class="proc-name">${proc['Procedimento']}</div>
+                <div class="proc-meta">
+                    <span>${proc['Categoria']}</span>
+                    <span>•</span>
+                    <span>Demanda: ${proc['Contagem'].toLocaleString('pt-BR')}</span>
+                </div>
+            </div>
+            <span class="badge ${prioridadeClass}">${proc['Grau de Importância']}</span>
+            <span class="status-badge ${parceirosClass}">${parceirosText}</span>
+            <button
+                class="btn-icon btn-edit"
+                onclick="viewParceiros(${proc.id})"
+                ${numParceiros === 0 ? 'disabled' : ''}
+                title="Ver Parceiros"
+            >→</button>
         `;
 
-        tbody.appendChild(row);
+        tbody.appendChild(card);
     });
 }
 
@@ -346,7 +343,7 @@ async function viewParceiros(procId) {
             const localizacao = bairro ? `${cidade} - ${bairro}` : cidade;
             headerInfo = `
                 <div style="background: #e8f5e9; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
-                    <strong>📍 Filtrado por localização:</strong> ${localizacao}
+                    <strong>⌘ Filtrado por localização:</strong> ${localizacao}
                 </div>
             `;
         }
@@ -357,51 +354,51 @@ async function viewParceiros(procId) {
                 : `Nenhum parceiro disponível para este procedimento`;
 
             modalBody.innerHTML = headerInfo + `
-                <div class="no-parceiros">
-                    <p>${mensagem}</p>
+                <div class="empty-state">
+                    <div class="empty-icon">○</div>
+                    <div class="empty-text">${mensagem}</div>
                 </div>
             `;
         } else {
             modalBody.innerHTML = headerInfo + data.parceiros.map(parc => {
                 const matchLabel = getMatchLabel(parc.match_type, parc.score);
-                const scoreClass = parc.score >= 90 ? 'score-100' : parc.score >= 70 ? 'score-80' : 'score-60';
+                const scoreClass = parc.score >= 90 ? 'status-active' : parc.score >= 70 ? 'badge-warning' : 'badge-info';
 
                 return `
-                    <div class="parceiro-card">
-                        <div class="parceiro-header">
-                            <div class="parceiro-nome">${parc.parceiro}</div>
-                            <div class="match-score">
-                                <span class="score-badge ${scoreClass}">
-                                    ${matchLabel}
-                                </span>
-                                ${parc.similaridade_nome ? `
-                                    <span class="similarity-badge">
-                                        Similaridade: ${parc.similaridade_nome}%
-                                    </span>
-                                ` : ''}
-                            </div>
+                    <div class="parceiro-card-modern">
+                        <div class="parceiro-header-modern">
+                            <div class="parceiro-nome-modern">${parc.parceiro}</div>
+                            <span class="status-badge ${scoreClass}">${matchLabel}</span>
                         </div>
-                        <div class="parceiro-info">
-                            <div class="info-item">
-                                <strong>Procedimento:</strong> ${parc.procedimento_nome}
+                        <div class="parceiro-info-modern">
+                            <div class="parceiro-info-item">
+                                <strong>Procedimento</strong>
+                                ${parc.procedimento_nome}
                             </div>
-                            <div class="info-item">
-                                <strong>Código Interno:</strong> ${parc.cod_interno}
+                            <div class="parceiro-info-item">
+                                <strong>Código Interno</strong>
+                                ${parc.cod_interno}
                             </div>
-                            <div class="info-item">
-                                <strong>Cidade:</strong> ${parc.cidade}
+                            <div class="parceiro-info-item">
+                                <strong>Localização</strong>
+                                ${parc.cidade} - ${parc.bairro}
                             </div>
-                            <div class="info-item">
-                                <strong>Bairro:</strong> ${parc.bairro}
-                            </div>
+                            ${parc.similaridade_nome ? `
+                                <div class="parceiro-info-item">
+                                    <strong>Similaridade</strong>
+                                    ${parc.similaridade_nome}%
+                                </div>
+                            ` : ''}
                             ${parc.repasse ? `
-                                <div class="info-item">
-                                    <strong>Repasse:</strong> R$ ${parc.repasse.toFixed(2)}
+                                <div class="parceiro-info-item">
+                                    <strong>Repasse</strong>
+                                    R$ ${parc.repasse.toFixed(2)}
                                 </div>
                             ` : ''}
                             ${parc.final ? `
-                                <div class="info-item">
-                                    <strong>Final:</strong> R$ ${parc.final.toFixed(2)}
+                                <div class="parceiro-info-item">
+                                    <strong>Final</strong>
+                                    R$ ${parc.final.toFixed(2)}
                                 </div>
                             ` : ''}
                         </div>

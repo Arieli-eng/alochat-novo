@@ -1,5 +1,6 @@
 // Estado global
 let currentTab = 'credenciadores';
+let todasCidades = [];
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -65,14 +66,19 @@ async function loadCredenciadores() {
             const row = document.createElement('tr');
             const statusClass = cred.ativo ? 'status-active' : 'status-inactive';
             const statusText = cred.ativo ? 'Ativo' : 'Inativo';
-            const cidadesVinculadas = cred.cidades_vinculadas && cred.cidades_vinculadas.length > 0
-                ? cred.cidades_vinculadas.join(', ')
-                : '-';
+
+            // Criar tags visuais para cidades vinculadas
+            let cidadesHtml = '-';
+            if (cred.cidades_vinculadas && cred.cidades_vinculadas.length > 0) {
+                cidadesHtml = '<div class="cidade-tags">' +
+                    cred.cidades_vinculadas.map(c => `<span class="cidade-tag">${c}</span>`).join('') +
+                    '</div>';
+            }
 
             row.innerHTML = `
                 <td><strong>${cred.nome}</strong></td>
                 <td>${cred.cidade}</td>
-                <td><small>${cidadesVinculadas}</small></td>
+                <td>${cidadesHtml}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td class="table-actions">
                     <button class="btn-edit" onclick="editCredenciador(${cred.id})">Editar</button>
@@ -86,11 +92,14 @@ async function loadCredenciadores() {
     }
 }
 
-function openCredenciadorModal(id = null) {
+async function openCredenciadorModal(id = null) {
     document.getElementById('credenciadorModalTitle').textContent = id ? 'Editar Credenciador' : 'Novo Credenciador';
     document.getElementById('formCredenciador').reset();
     document.getElementById('credenciadorId').value = id || '';
     document.getElementById('credenciadorAtivo').checked = true;
+
+    // Carregar lista de cidades no select
+    await populateCidadesSelect();
 
     if (id) {
         fetch(`/config/api/credenciadores`)
@@ -101,11 +110,38 @@ function openCredenciadorModal(id = null) {
                     document.getElementById('credenciadorNome').value = cred.nome;
                     document.getElementById('credenciadorCidade').value = cred.cidade;
                     document.getElementById('credenciadorAtivo').checked = cred.ativo;
+
+                    // Selecionar cidades vinculadas
+                    const select = document.getElementById('credenciadorCidadesVinculadas');
+                    const vinculadas = cred.cidades_vinculadas || [];
+                    Array.from(select.options).forEach(option => {
+                        option.selected = vinculadas.includes(option.text);
+                    });
                 }
             });
     }
 
     openModal('modalCredenciador');
+}
+
+async function populateCidadesSelect() {
+    try {
+        const response = await fetch('/config/api/cidades-config');
+        const cidades = await response.json();
+        todasCidades = cidades;
+
+        const select = document.getElementById('credenciadorCidadesVinculadas');
+        select.innerHTML = '';
+
+        cidades.filter(c => c.ativa).forEach(cidade => {
+            const option = document.createElement('option');
+            option.value = cidade.id;
+            option.textContent = `${cidade.nome} - ${cidade.estado}`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar cidades:', error);
+    }
 }
 
 function editCredenciador(id) {
@@ -117,10 +153,16 @@ async function saveCredenciador(event) {
     showLoading(true);
 
     const id = document.getElementById('credenciadorId').value;
+
+    // Pegar IDs das cidades selecionadas
+    const select = document.getElementById('credenciadorCidadesVinculadas');
+    const cidadesSelecionadas = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+
     const data = {
         nome: document.getElementById('credenciadorNome').value,
         cidade: document.getElementById('credenciadorCidade').value,
-        ativo: document.getElementById('credenciadorAtivo').checked
+        ativo: document.getElementById('credenciadorAtivo').checked,
+        cidades_ids: cidadesSelecionadas
     };
 
     try {
@@ -446,7 +488,7 @@ async function loadSLA() {
                     <span class="sla-badge" style="background: ${sla.cor_badge || '#ccc'}"></span>
                     <strong>${sla.prioridade}</strong>
                 </td>
-                <td><strong>${sla.tempo_horas}h</strong></td>
+                <td><strong>${sla.tempo_dias} ${sla.tempo_dias === 1 ? 'dia' : 'dias'}</strong></td>
                 <td><small>${sla.descricao || '-'}</small></td>
                 <td class="table-actions">
                     <button class="btn-edit" onclick="editSLA(${sla.id})">Editar</button>
@@ -467,7 +509,7 @@ function editSLA(id) {
             if (sla) {
                 document.getElementById('slaId').value = sla.id;
                 document.getElementById('slaPrioridade').value = sla.prioridade;
-                document.getElementById('slaTempo').value = sla.tempo_horas;
+                document.getElementById('slaTempo').value = sla.tempo_dias;
                 document.getElementById('slaDescricao').value = sla.descricao || '';
 
                 openModal('modalSLA');
@@ -481,7 +523,7 @@ async function saveSLA(event) {
 
     const id = document.getElementById('slaId').value;
     const data = {
-        tempo_horas: parseInt(document.getElementById('slaTempo').value),
+        tempo_dias: parseInt(document.getElementById('slaTempo').value),
         descricao: document.getElementById('slaDescricao').value || null
     };
 

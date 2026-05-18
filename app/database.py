@@ -33,35 +33,35 @@ def seed_initial_data():
     Popula dados iniciais de SLA baseados nos graus de importância.
 
     SLA (Service Level Agreement):
-    - Alta Prioridade: 24 horas
-    - Média-Alta Prioridade: 48 horas
-    - Média Prioridade: 72 horas
-    - Baixa Prioridade: 120 horas
+    - Alta Prioridade: 1 dia
+    - Média-Alta Prioridade: 2 dias
+    - Média Prioridade: 3 dias
+    - Baixa Prioridade: 5 dias
     """
     from models import SLAConfig
 
     slas_iniciais = [
         {
             'prioridade': 'Alta Prioridade',
-            'tempo_horas': 24,
+            'tempo_dias': 1,
             'descricao': 'Procedimentos de alta demanda e urgência',
             'cor_badge': '#ef4444'
         },
         {
             'prioridade': 'Média-Alta Prioridade',
-            'tempo_horas': 48,
+            'tempo_dias': 2,
             'descricao': 'Procedimentos com demanda significativa',
             'cor_badge': '#f59e0b'
         },
         {
             'prioridade': 'Média Prioridade',
-            'tempo_horas': 72,
+            'tempo_dias': 3,
             'descricao': 'Procedimentos com demanda moderada',
             'cor_badge': '#fbbf24'
         },
         {
             'prioridade': 'Baixa Prioridade',
-            'tempo_horas': 120,
+            'tempo_dias': 5,
             'descricao': 'Procedimentos com baixa demanda',
             'cor_badge': '#10b981'
         }

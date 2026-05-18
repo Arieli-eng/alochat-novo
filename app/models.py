@@ -118,7 +118,7 @@ class SLAConfig(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     prioridade = db.Column(db.String(50), nullable=False, unique=True)
-    tempo_horas = db.Column(db.Integer, nullable=False)
+    tempo_dias = db.Column(db.Integer, nullable=False)
     descricao = db.Column(db.Text)
     cor_badge = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -129,7 +129,7 @@ class SLAConfig(db.Model):
         return {
             'id': self.id,
             'prioridade': self.prioridade,
-            'tempo_horas': self.tempo_horas,
+            'tempo_dias': self.tempo_dias,
             'descricao': self.descricao,
             'cor_badge': self.cor_badge,
             'created_at': self.created_at.isoformat() if self.created_at else None,

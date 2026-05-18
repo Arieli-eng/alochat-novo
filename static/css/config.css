@@ -226,3 +226,36 @@
 .table th {
     padding: 10px 12px;
 }
+
+/* Tags de Cidades Vinculadas */
+.cidade-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cidade-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Select Múltiplo Estilizado */
+select[multiple] {
+    padding: 8px;
+}
+
+select[multiple] option {
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+
+select[multiple] option:checked {
+    background: var(--primary) !important;
+    color: white !important;
+}

@@ -232,10 +232,10 @@ def update_sla(id):
     sla = SLAConfig.query.get_or_404(id)
     data = request.json
 
-    if 'tempo_horas' in data:
-        if not isinstance(data['tempo_horas'], int) or data['tempo_horas'] <= 0:
+    if 'tempo_dias' in data:
+        if not isinstance(data['tempo_dias'], int) or data['tempo_dias'] <= 0:
             return jsonify({'error': 'Tempo deve ser um número inteiro positivo'}), 400
-        sla.tempo_horas = data['tempo_horas']
+        sla.tempo_dias = data['tempo_dias']
 
     sla.descricao = data.get('descricao', sla.descricao)
 

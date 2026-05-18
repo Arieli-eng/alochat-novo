@@ -1,95 +1,247 @@
 // Estado global
-let currentTab = 'credenciadores';
+let currentSection = 'credenciadores';
 let todasCidades = [];
+let allData = {
+    credenciadores: [],
+    responsaveis: [],
+    cidades: [],
+    sla: []
+};
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
-    setupTabs();
     loadAllData();
+    showSection('credenciadores');
 });
 
-// Setup de tabs
-function setupTabs() {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabName = btn.dataset.tab;
-            switchTab(tabName);
-        });
+// Trocar seção
+function showSection(section) {
+    currentSection = section;
+
+    // Atualizar menu ativo
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
     });
+    const activeItem = document.querySelector(`.nav-item[data-section="${section}"]`);
+    if (activeItem) activeItem.classList.add('active');
+
+    // Atualizar título
+    const titles = {
+        'credenciadores': 'Credenciadores',
+        'responsaveis': 'Responsáveis',
+        'cidades': 'Cidades',
+        'sla': 'SLA'
+    };
+    document.getElementById('pageTitle').textContent = titles[section] || section;
+
+    // Atualizar botão de adicionar
+    const addButton = document.getElementById('addButton');
+    if (section === 'sla') {
+        addButton.style.display = 'none';
+    } else {
+        addButton.style.display = 'block';
+    }
+
+    // Renderizar conteúdo
+    renderContent();
 }
 
-// Trocar tab
-function switchTab(tabName) {
-    currentTab = tabName;
-
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-
-    const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
-    const activeContent = document.getElementById(`tab-${tabName}`);
-
-    if (activeBtn) activeBtn.classList.add('active');
-    if (activeContent) activeContent.classList.add('active');
+// Abrir modal de adicionar
+function openAddModal() {
+    switch (currentSection) {
+        case 'credenciadores':
+            openCredenciadorModal();
+            break;
+        case 'responsaveis':
+            openResponsavelModal();
+            break;
+        case 'cidades':
+            openCidadeModal();
+            break;
+    }
 }
 
 // Carregar todos os dados
 async function loadAllData() {
-    await Promise.all([
-        loadCredenciadores(),
-        loadResponsaveis(),
-        loadCidades(),
-        loadSLA()
-    ]);
+    try {
+        const [cred, resp, cid, slaData] = await Promise.all([
+            fetch('/config/api/credenciadores').then(r => r.json()),
+            fetch('/config/api/responsaveis').then(r => r.json()),
+            fetch('/config/api/cidades-config').then(r => r.json()),
+            fetch('/config/api/sla').then(r => r.json())
+        ]);
+
+        allData.credenciadores = cred;
+        allData.responsaveis = resp;
+        allData.cidades = cid;
+        allData.sla = slaData;
+
+        renderContent();
+    } catch (error) {
+        showNotification('Erro ao carregar dados: ' + error.message, 'error');
+    }
+}
+
+// Renderizar conteúdo da seção atual
+function renderContent() {
+    const contentArea = document.getElementById('contentArea');
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+    let data = allData[currentSection] || [];
+
+    // Filtrar por busca
+    if (searchTerm) {
+        data = data.filter(item => {
+            const nome = item.nome || item.prioridade || '';
+            return nome.toLowerCase().includes(searchTerm);
+        });
+    }
+
+    if (data.length === 0) {
+        contentArea.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">Nenhum registro encontrado</div>
+                <div class="empty-subtext">Clique em "+ Novo Cadastro" para adicionar</div>
+            </div>
+        `;
+        return;
+    }
+
+    const itemsList = document.createElement('div');
+    itemsList.className = 'items-list';
+
+    data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+
+        switch (currentSection) {
+            case 'credenciadores':
+                card.innerHTML = renderCredenciadorCard(item);
+                break;
+            case 'responsaveis':
+                card.innerHTML = renderResponsavelCard(item);
+                break;
+            case 'cidades':
+                card.innerHTML = renderCidadeCard(item);
+                break;
+            case 'sla':
+                card.innerHTML = renderSLACard(item);
+                break;
+        }
+
+        itemsList.appendChild(card);
+    });
+
+    contentArea.innerHTML = '';
+    contentArea.appendChild(itemsList);
+}
+
+function renderCredenciadorCard(cred) {
+    const statusClass = cred.ativo ? 'status-active' : 'status-inactive';
+    const statusText = cred.ativo ? 'Ativo' : 'Inativo';
+
+    let cidadesHtml = '<span style="color: var(--text-light); font-size: 0.85rem;">Nenhuma cidade vinculada</span>';
+    if (cred.cidades_vinculadas && cred.cidades_vinculadas.length > 0) {
+        cidadesHtml = '<div class="cidade-tags">' +
+            cred.cidades_vinculadas.map(c => `<span class="cidade-tag">${c.nome} - ${c.estado}</span>`).join('') +
+            '</div>';
+    }
+
+    return `
+        <div class="item-info">
+            <div class="item-name">${cred.nome}</div>
+            <div class="item-details">
+                ${cidadesHtml}
+            </div>
+        </div>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+        <div class="item-actions">
+            <button class="btn-icon btn-edit" onclick="editCredenciador(${cred.id})" title="Editar">✏️</button>
+            <button class="btn-icon btn-delete" onclick="deleteCredenciador(${cred.id}, '${cred.nome}')" title="Excluir">🗑️</button>
+        </div>
+    `;
+}
+
+function renderResponsavelCard(resp) {
+    const statusClass = resp.ativo ? 'status-active' : 'status-inactive';
+    const statusText = resp.ativo ? 'Ativo' : 'Inativo';
+
+    return `
+        <div class="item-info">
+            <div class="item-name">${resp.nome}</div>
+            <div class="item-details">
+                <span class="item-detail">${resp.email || 'Sem email'}</span>
+            </div>
+        </div>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+        <div class="item-actions">
+            <button class="btn-icon btn-edit" onclick="editResponsavel(${resp.id})" title="Editar">✏️</button>
+            <button class="btn-icon btn-delete" onclick="deleteResponsavel(${resp.id}, '${resp.nome}')" title="Excluir">🗑️</button>
+        </div>
+    `;
+}
+
+function renderCidadeCard(cidade) {
+    const statusClass = cidade.ativa ? 'status-active' : 'status-inactive';
+    const statusText = cidade.ativa ? 'Ativa' : 'Inativa';
+
+    return `
+        <div class="item-info">
+            <div class="item-name">${cidade.nome} - ${cidade.estado}</div>
+            <div class="item-details">
+                <span class="item-detail">${cidade.num_credenciadores || 0} credenciador(es)</span>
+                ${cidade.observacoes ? `<span class="item-detail">${cidade.observacoes}</span>` : ''}
+            </div>
+        </div>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+        <div class="item-actions">
+            <button class="btn-icon btn-edit" onclick="editCidade(${cidade.id})" title="Editar">✏️</button>
+            <button class="btn-icon btn-delete" onclick="deleteCidade(${cidade.id}, '${cidade.nome}')" title="Excluir">🗑️</button>
+        </div>
+    `;
+}
+
+function renderSLACard(sla) {
+    const badgeStyle = sla.cor_badge ? `background: ${sla.cor_badge}; width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-right: 8px;` : '';
+
+    return `
+        <div class="item-info">
+            <div class="item-name">
+                <span style="${badgeStyle}"></span>
+                ${sla.prioridade}
+            </div>
+            <div class="item-details">
+                <span class="item-detail"><strong>${sla.tempo_dias} ${sla.tempo_dias === 1 ? 'dia' : 'dias'}</strong></span>
+                <span class="item-detail">${sla.descricao || ''}</span>
+            </div>
+        </div>
+        <div class="item-actions">
+            <button class="btn-icon btn-edit" onclick="editSLA(${sla.id})" title="Editar">✏️</button>
+        </div>
+    `;
+}
+
+// Event listener para busca
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => {
+            renderContent();
+        }, 300));
+    }
+});
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
 }
 
 // ==== CREDENCIADORES ====
-
-async function loadCredenciadores() {
-    try {
-        const response = await fetch('/config/api/credenciadores');
-        const data = await response.json();
-
-        const tbody = document.getElementById('credenciadoresTable');
-        tbody.innerHTML = '';
-
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-light);">Nenhum credenciador cadastrado</td></tr>';
-            return;
-        }
-
-        data.forEach(cred => {
-            const row = document.createElement('tr');
-            const statusClass = cred.ativo ? 'status-active' : 'status-inactive';
-            const statusText = cred.ativo ? 'Ativo' : 'Inativo';
-
-            // Criar tags visuais para cidades de atuação
-            let cidadesHtml = '<small style="color: var(--text-light);">Nenhuma cidade vinculada</small>';
-            if (cred.cidades_vinculadas && cred.cidades_vinculadas.length > 0) {
-                cidadesHtml = '<div class="cidade-tags">' +
-                    cred.cidades_vinculadas.map(c => `<span class="cidade-tag">${c.nome} - ${c.estado}</span>`).join('') +
-                    '</div>';
-            }
-
-            row.innerHTML = `
-                <td><strong>${cred.nome}</strong></td>
-                <td>${cidadesHtml}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                <td class="table-actions">
-                    <button class="btn-edit" onclick="editCredenciador(${cred.id})">Editar</button>
-                    <button class="btn-delete" onclick="deleteCredenciador(${cred.id}, '${cred.nome}')">Excluir</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch (error) {
-        showNotification('Erro ao carregar credenciadores: ' + error.message, 'error');
-    }
-}
 
 async function openCredenciadorModal(id = null) {
     document.getElementById('credenciadorModalTitle').textContent = id ? 'Editar Credenciador' : 'Novo Credenciador';
@@ -97,49 +249,35 @@ async function openCredenciadorModal(id = null) {
     document.getElementById('credenciadorId').value = id || '';
     document.getElementById('credenciadorAtivo').checked = true;
 
-    // Carregar lista de cidades no select
     await populateCidadesSelect();
 
     if (id) {
-        fetch(`/config/api/credenciadores`)
-            .then(res => res.json())
-            .then(data => {
-                const cred = data.find(c => c.id === id);
-                if (cred) {
-                    document.getElementById('credenciadorNome').value = cred.nome;
-                    document.getElementById('credenciadorAtivo').checked = cred.ativo;
+        const cred = allData.credenciadores.find(c => c.id === id);
+        if (cred) {
+            document.getElementById('credenciadorNome').value = cred.nome;
+            document.getElementById('credenciadorAtivo').checked = cred.ativo;
 
-                    // Selecionar cidades vinculadas
-                    const select = document.getElementById('credenciadorCidadesVinculadas');
-                    const vinculadasIds = (cred.cidades_vinculadas || []).map(c => c.id);
-                    Array.from(select.options).forEach(option => {
-                        option.selected = vinculadasIds.includes(parseInt(option.value));
-                    });
-                }
+            const select = document.getElementById('credenciadorCidadesVinculadas');
+            const vinculadasIds = (cred.cidades_vinculadas || []).map(c => c.id);
+            Array.from(select.options).forEach(option => {
+                option.selected = vinculadasIds.includes(parseInt(option.value));
             });
+        }
     }
 
     openModal('modalCredenciador');
 }
 
 async function populateCidadesSelect() {
-    try {
-        const response = await fetch('/config/api/cidades-config');
-        const cidades = await response.json();
-        todasCidades = cidades;
+    const select = document.getElementById('credenciadorCidadesVinculadas');
+    select.innerHTML = '';
 
-        const select = document.getElementById('credenciadorCidadesVinculadas');
-        select.innerHTML = '';
-
-        cidades.filter(c => c.ativa).forEach(cidade => {
-            const option = document.createElement('option');
-            option.value = cidade.id;
-            option.textContent = `${cidade.nome} - ${cidade.estado}`;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Erro ao carregar cidades:', error);
-    }
+    allData.cidades.filter(c => c.ativa).forEach(cidade => {
+        const option = document.createElement('option');
+        option.value = cidade.id;
+        option.textContent = `${cidade.nome} - ${cidade.estado}`;
+        select.appendChild(option);
+    });
 }
 
 function editCredenciador(id) {
@@ -151,8 +289,6 @@ async function saveCredenciador(event) {
     showLoading(true);
 
     const id = document.getElementById('credenciadorId').value;
-
-    // Pegar IDs das cidades selecionadas
     const select = document.getElementById('credenciadorCidadesVinculadas');
     const cidadesSelecionadas = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
 
@@ -175,7 +311,7 @@ async function saveCredenciador(event) {
         if (response.ok) {
             showNotification('Credenciador salvo com sucesso!', 'success');
             closeModal('modalCredenciador');
-            await loadCredenciadores();
+            await loadAllData();
         } else {
             const error = await response.json();
             showNotification(error.error || 'Erro ao salvar credenciador', 'error');
@@ -188,20 +324,14 @@ async function saveCredenciador(event) {
 }
 
 async function deleteCredenciador(id, nome) {
-    if (!confirm(`Tem certeza que deseja excluir o credenciador "${nome}"?`)) {
-        return;
-    }
+    if (!confirm(`Tem certeza que deseja excluir o credenciador "${nome}"?`)) return;
 
     showLoading(true);
-
     try {
-        const response = await fetch(`/config/api/credenciadores/${id}`, {
-            method: 'DELETE'
-        });
-
+        const response = await fetch(`/config/api/credenciadores/${id}`, { method: 'DELETE' });
         if (response.ok) {
             showNotification('Credenciador excluído com sucesso!', 'success');
-            await loadCredenciadores();
+            await loadAllData();
         } else {
             showNotification('Erro ao excluir credenciador', 'error');
         }
@@ -214,40 +344,6 @@ async function deleteCredenciador(id, nome) {
 
 // ==== RESPONSÁVEIS ====
 
-async function loadResponsaveis() {
-    try {
-        const response = await fetch('/config/api/responsaveis');
-        const data = await response.json();
-
-        const tbody = document.getElementById('responsaveisTable');
-        tbody.innerHTML = '';
-
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-light);">Nenhum responsável cadastrado</td></tr>';
-            return;
-        }
-
-        data.forEach(resp => {
-            const row = document.createElement('tr');
-            const statusClass = resp.ativo ? 'status-active' : 'status-inactive';
-            const statusText = resp.ativo ? 'Ativo' : 'Inativo';
-
-            row.innerHTML = `
-                <td><strong>${resp.nome}</strong></td>
-                <td>${resp.email || '-'}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                <td class="table-actions">
-                    <button class="btn-edit" onclick="editResponsavel(${resp.id})">Editar</button>
-                    <button class="btn-delete" onclick="deleteResponsavel(${resp.id}, '${resp.nome}')">Excluir</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch (error) {
-        showNotification('Erro ao carregar responsáveis: ' + error.message, 'error');
-    }
-}
-
 function openResponsavelModal(id = null) {
     document.getElementById('responsavelModalTitle').textContent = id ? 'Editar Responsável' : 'Novo Responsável';
     document.getElementById('formResponsavel').reset();
@@ -255,16 +351,12 @@ function openResponsavelModal(id = null) {
     document.getElementById('responsavelAtivo').checked = true;
 
     if (id) {
-        fetch(`/config/api/responsaveis`)
-            .then(res => res.json())
-            .then(data => {
-                const resp = data.find(r => r.id === id);
-                if (resp) {
-                    document.getElementById('responsavelNome').value = resp.nome;
-                    document.getElementById('responsavelEmail').value = resp.email || '';
-                    document.getElementById('responsavelAtivo').checked = resp.ativo;
-                }
-            });
+        const resp = allData.responsaveis.find(r => r.id === id);
+        if (resp) {
+            document.getElementById('responsavelNome').value = resp.nome;
+            document.getElementById('responsavelEmail').value = resp.email || '';
+            document.getElementById('responsavelAtivo').checked = resp.ativo;
+        }
     }
 
     openModal('modalResponsavel');
@@ -298,7 +390,7 @@ async function saveResponsavel(event) {
         if (response.ok) {
             showNotification('Responsável salvo com sucesso!', 'success');
             closeModal('modalResponsavel');
-            await loadResponsaveis();
+            await loadAllData();
         } else {
             const error = await response.json();
             showNotification(error.error || 'Erro ao salvar responsável', 'error');
@@ -311,20 +403,14 @@ async function saveResponsavel(event) {
 }
 
 async function deleteResponsavel(id, nome) {
-    if (!confirm(`Tem certeza que deseja excluir o responsável "${nome}"?`)) {
-        return;
-    }
+    if (!confirm(`Tem certeza que deseja excluir o responsável "${nome}"?`)) return;
 
     showLoading(true);
-
     try {
-        const response = await fetch(`/config/api/responsaveis/${id}`, {
-            method: 'DELETE'
-        });
-
+        const response = await fetch(`/config/api/responsaveis/${id}`, { method: 'DELETE' });
         if (response.ok) {
             showNotification('Responsável excluído com sucesso!', 'success');
-            await loadResponsaveis();
+            await loadAllData();
         } else {
             showNotification('Erro ao excluir responsável', 'error');
         }
@@ -337,42 +423,6 @@ async function deleteResponsavel(id, nome) {
 
 // ==== CIDADES ====
 
-async function loadCidades() {
-    try {
-        const response = await fetch('/config/api/cidades-config');
-        const data = await response.json();
-
-        const tbody = document.getElementById('cidadesTable');
-        tbody.innerHTML = '';
-
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-light);">Nenhuma cidade cadastrada</td></tr>';
-            return;
-        }
-
-        data.forEach(cidade => {
-            const row = document.createElement('tr');
-            const statusClass = cidade.ativa ? 'status-active' : 'status-inactive';
-            const statusText = cidade.ativa ? 'Ativa' : 'Inativa';
-
-            row.innerHTML = `
-                <td><strong>${cidade.nome}</strong></td>
-                <td>${cidade.estado}</td>
-                <td>${cidade.num_credenciadores || 0}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                <td><small>${cidade.observacoes || '-'}</small></td>
-                <td class="table-actions">
-                    <button class="btn-edit" onclick="editCidade(${cidade.id})">Editar</button>
-                    <button class="btn-delete" onclick="deleteCidade(${cidade.id}, '${cidade.nome}')">Excluir</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch (error) {
-        showNotification('Erro ao carregar cidades: ' + error.message, 'error');
-    }
-}
-
 function openCidadeModal(id = null) {
     document.getElementById('cidadeModalTitle').textContent = id ? 'Editar Cidade' : 'Nova Cidade';
     document.getElementById('formCidade').reset();
@@ -380,17 +430,13 @@ function openCidadeModal(id = null) {
     document.getElementById('cidadeAtiva').checked = true;
 
     if (id) {
-        fetch(`/config/api/cidades-config`)
-            .then(res => res.json())
-            .then(data => {
-                const cidade = data.find(c => c.id === id);
-                if (cidade) {
-                    document.getElementById('cidadeNome').value = cidade.nome;
-                    document.getElementById('cidadeEstado').value = cidade.estado;
-                    document.getElementById('cidadeObservacoes').value = cidade.observacoes || '';
-                    document.getElementById('cidadeAtiva').checked = cidade.ativa;
-                }
-            });
+        const cidade = allData.cidades.find(c => c.id === id);
+        if (cidade) {
+            document.getElementById('cidadeNome').value = cidade.nome;
+            document.getElementById('cidadeEstado').value = cidade.estado;
+            document.getElementById('cidadeObservacoes').value = cidade.observacoes || '';
+            document.getElementById('cidadeAtiva').checked = cidade.ativa;
+        }
     }
 
     openModal('modalCidade');
@@ -425,7 +471,7 @@ async function saveCidade(event) {
         if (response.ok) {
             showNotification('Cidade salva com sucesso!', 'success');
             closeModal('modalCidade');
-            await loadCidades();
+            await loadAllData();
         } else {
             const error = await response.json();
             showNotification(error.error || 'Erro ao salvar cidade', 'error');
@@ -438,20 +484,14 @@ async function saveCidade(event) {
 }
 
 async function deleteCidade(id, nome) {
-    if (!confirm(`Tem certeza que deseja excluir a cidade "${nome}"?`)) {
-        return;
-    }
+    if (!confirm(`Tem certeza que deseja excluir a cidade "${nome}"?`)) return;
 
     showLoading(true);
-
     try {
-        const response = await fetch(`/config/api/cidades-config/${id}`, {
-            method: 'DELETE'
-        });
-
+        const response = await fetch(`/config/api/cidades-config/${id}`, { method: 'DELETE' });
         if (response.ok) {
             showNotification('Cidade excluída com sucesso!', 'success');
-            await loadCidades();
+            await loadAllData();
         } else {
             showNotification('Erro ao excluir cidade', 'error');
         }
@@ -464,54 +504,15 @@ async function deleteCidade(id, nome) {
 
 // ==== SLA ====
 
-async function loadSLA() {
-    try {
-        const response = await fetch('/config/api/sla');
-        const data = await response.json();
-
-        const tbody = document.getElementById('slaTable');
-        tbody.innerHTML = '';
-
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-light);">Nenhuma configuração de SLA</td></tr>';
-            return;
-        }
-
-        data.forEach(sla => {
-            const row = document.createElement('tr');
-
-            row.innerHTML = `
-                <td>
-                    <span class="sla-badge" style="background: ${sla.cor_badge || '#ccc'}"></span>
-                    <strong>${sla.prioridade}</strong>
-                </td>
-                <td><strong>${sla.tempo_dias} ${sla.tempo_dias === 1 ? 'dia' : 'dias'}</strong></td>
-                <td><small>${sla.descricao || '-'}</small></td>
-                <td class="table-actions">
-                    <button class="btn-edit" onclick="editSLA(${sla.id})">Editar</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch (error) {
-        showNotification('Erro ao carregar SLA: ' + error.message, 'error');
-    }
-}
-
 function editSLA(id) {
-    fetch(`/config/api/sla`)
-        .then(res => res.json())
-        .then(data => {
-            const sla = data.find(s => s.id === id);
-            if (sla) {
-                document.getElementById('slaId').value = sla.id;
-                document.getElementById('slaPrioridade').value = sla.prioridade;
-                document.getElementById('slaTempo').value = sla.tempo_dias;
-                document.getElementById('slaDescricao').value = sla.descricao || '';
-
-                openModal('modalSLA');
-            }
-        });
+    const sla = allData.sla.find(s => s.id === id);
+    if (sla) {
+        document.getElementById('slaId').value = sla.id;
+        document.getElementById('slaPrioridade').value = sla.prioridade;
+        document.getElementById('slaTempo').value = sla.tempo_dias;
+        document.getElementById('slaDescricao').value = sla.descricao || '';
+        openModal('modalSLA');
+    }
 }
 
 async function saveSLA(event) {
@@ -534,7 +535,7 @@ async function saveSLA(event) {
         if (response.ok) {
             showNotification('SLA atualizado com sucesso!', 'success');
             closeModal('modalSLA');
-            await loadSLA();
+            await loadAllData();
         } else {
             const error = await response.json();
             showNotification(error.error || 'Erro ao atualizar SLA', 'error');
@@ -557,7 +558,7 @@ function closeModal(modalId) {
 }
 
 function showLoading(show) {
-    document.getElementById('loading').style.display = show ? 'block' : 'none';
+    document.getElementById('loading').style.display = show ? 'flex' : 'none';
 }
 
 function showNotification(message, type = 'info') {
@@ -570,7 +571,6 @@ function showNotification(message, type = 'info') {
     }, 4000);
 }
 
-// Fechar modal ao clicar fora
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
         event.target.classList.remove('active');

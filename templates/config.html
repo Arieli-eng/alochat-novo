@@ -7,164 +7,115 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/config.css') }}">
 </head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>⚙️ Painel de Configurações</h1>
-            <p>Gerenciamento de credenciadores, responsáveis, cidades e SLA</p>
-            <nav class="header-nav">
-                <a href="/" class="nav-link">← Voltar aos Procedimentos</a>
-            </nav>
-        </header>
-
-        <!-- Tabs -->
-        <div class="tabs-container">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="credenciadores">Credenciadores</button>
-                <button class="tab-btn" data-tab="responsaveis">Responsáveis</button>
-                <button class="tab-btn" data-tab="cidades">Cidades</button>
-                <button class="tab-btn" data-tab="sla">SLA</button>
-            </div>
-
-            <!-- Tab: Credenciadores -->
-            <div class="tab-content active" id="tab-credenciadores">
-                <div class="tab-header">
-                    <h2>Credenciadores</h2>
-                    <button class="btn btn-primary" onclick="openCredenciadorModal()">+ Novo Credenciador</button>
-                </div>
-
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Cidades de Atuação</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="credenciadoresTable">
-                            <tr><td colspan="4" style="text-align: center; padding: 40px;">Carregando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tab: Responsáveis -->
-            <div class="tab-content" id="tab-responsaveis">
-                <div class="tab-header">
-                    <h2>Responsáveis</h2>
-                    <button class="btn btn-primary" onclick="openResponsavelModal()">+ Novo Responsável</button>
-                </div>
-
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="responsaveisTable">
-                            <tr><td colspan="4" style="text-align: center; padding: 40px;">Carregando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tab: Cidades -->
-            <div class="tab-content" id="tab-cidades">
-                <div class="tab-header">
-                    <h2>Cidades</h2>
-                    <button class="btn btn-primary" onclick="openCidadeModal()">+ Nova Cidade</button>
-                </div>
-
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Estado</th>
-                                <th>Credenciadores</th>
-                                <th>Status</th>
-                                <th>Observações</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cidadesTable">
-                            <tr><td colspan="6" style="text-align: center; padding: 40px;">Carregando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tab: SLA -->
-            <div class="tab-content" id="tab-sla">
-                <div class="tab-header">
-                    <h2>SLA - Tempo de Processamento</h2>
-                    <p style="color: var(--text-light); margin-top: 8px;">
-                        Define o tempo máximo para processar chamados de cada prioridade
-                    </p>
-                </div>
-
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Prioridade</th>
-                                <th>Tempo (dias)</th>
-                                <th>Descrição</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="slaTable">
-                            <tr><td colspan="4" style="text-align: center; padding: 40px;">Carregando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+<body class="config-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">AC</div>
+                <span class="logo-text">AloChat</span>
             </div>
         </div>
-    </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar">A</div>
+            <div class="user-info">
+                <div class="user-name">Arieti</div>
+                <div class="user-role">Gestora</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">GESTÃO</div>
+                <a href="/" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Principal</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">CONFIGURAÇÕES</div>
+                <a href="#" class="nav-item" data-section="credenciadores" onclick="showSection('credenciadores'); return false;">
+                    <span class="nav-icon">🏥</span>
+                    <span class="nav-text">Credenciadores</span>
+                </a>
+                <a href="#" class="nav-item" data-section="responsaveis" onclick="showSection('responsaveis'); return false;">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Responsáveis</span>
+                </a>
+                <a href="#" class="nav-item" data-section="cidades" onclick="showSection('cidades'); return false;">
+                    <span class="nav-icon">📍</span>
+                    <span class="nav-text">Cidades</span>
+                </a>
+                <a href="#" class="nav-item" data-section="sla" onclick="showSection('sla'); return false;">
+                    <span class="nav-icon">⏱️</span>
+                    <span class="nav-text">SLA</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="content-header">
+            <button class="back-button" onclick="window.location.href='/'">
+                <span>←</span>
+            </button>
+            <h1 class="page-title" id="pageTitle">Credenciadores</h1>
+        </header>
+
+        <!-- Search and Actions -->
+        <div class="content-toolbar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Digite o nome do cadastro..." class="search-input">
+            </div>
+            <button class="btn-add" id="addButton" onclick="openAddModal()">
+                + Novo Cadastro
+            </button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <!-- Será preenchido dinamicamente -->
+        </div>
+    </main>
 
     <!-- Modal Credenciador -->
     <div id="modalCredenciador" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal-modern">
+            <div class="modal-header-modern">
                 <h2 id="credenciadorModalTitle">Novo Credenciador</h2>
-                <button class="modal-close" onclick="closeModal('modalCredenciador')">&times;</button>
+                <button class="modal-close-modern" onclick="closeModal('modalCredenciador')">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body-modern">
                 <form id="formCredenciador" onsubmit="saveCredenciador(event)">
                     <input type="hidden" id="credenciadorId">
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="credenciadorNome">Nome *</label>
-                        <input type="text" id="credenciadorNome" class="input" required>
+                        <input type="text" id="credenciadorNome" class="input-modern" required>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="credenciadorCidadesVinculadas">Cidades de Atuação *</label>
-                        <select id="credenciadorCidadesVinculadas" class="select" multiple style="height: 150px;" required>
-                            <!-- Preenchido dinamicamente -->
+                        <select id="credenciadorCidadesVinculadas" class="select-modern" multiple required>
                         </select>
-                        <small style="color: var(--text-light); margin-top: 4px; display: block;">
-                            Segure Ctrl/Cmd para selecionar múltiplas cidades. Mínimo 1 cidade.
-                        </small>
+                        <small class="input-hint">Segure Ctrl/Cmd para selecionar múltiplas cidades</small>
                     </div>
 
-                    <div class="form-group">
-                        <label>
+                    <div class="form-group-modern checkbox-group">
+                        <label class="checkbox-label">
                             <input type="checkbox" id="credenciadorAtivo" checked>
-                            Ativo
+                            <span>Ativo</span>
                         </label>
                     </div>
 
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('modalCredenciador')">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    <div class="modal-actions-modern">
+                        <button type="button" class="btn-secondary-modern" onclick="closeModal('modalCredenciador')">Cancelar</button>
+                        <button type="submit" class="btn-primary-modern">Salvar</button>
                     </div>
                 </form>
             </div>
@@ -173,35 +124,35 @@
 
     <!-- Modal Responsável -->
     <div id="modalResponsavel" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal-modern">
+            <div class="modal-header-modern">
                 <h2 id="responsavelModalTitle">Novo Responsável</h2>
-                <button class="modal-close" onclick="closeModal('modalResponsavel')">&times;</button>
+                <button class="modal-close-modern" onclick="closeModal('modalResponsavel')">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body-modern">
                 <form id="formResponsavel" onsubmit="saveResponsavel(event)">
                     <input type="hidden" id="responsavelId">
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="responsavelNome">Nome *</label>
-                        <input type="text" id="responsavelNome" class="input" required>
+                        <input type="text" id="responsavelNome" class="input-modern" required>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="responsavelEmail">Email</label>
-                        <input type="email" id="responsavelEmail" class="input">
+                        <input type="email" id="responsavelEmail" class="input-modern">
                     </div>
 
-                    <div class="form-group">
-                        <label>
+                    <div class="form-group-modern checkbox-group">
+                        <label class="checkbox-label">
                             <input type="checkbox" id="responsavelAtivo" checked>
-                            Ativo
+                            <span>Ativo</span>
                         </label>
                     </div>
 
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('modalResponsavel')">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    <div class="modal-actions-modern">
+                        <button type="button" class="btn-secondary-modern" onclick="closeModal('modalResponsavel')">Cancelar</button>
+                        <button type="submit" class="btn-primary-modern">Salvar</button>
                     </div>
                 </form>
             </div>
@@ -210,41 +161,41 @@
 
     <!-- Modal Cidade -->
     <div id="modalCidade" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal-modern">
+            <div class="modal-header-modern">
                 <h2 id="cidadeModalTitle">Nova Cidade</h2>
-                <button class="modal-close" onclick="closeModal('modalCidade')">&times;</button>
+                <button class="modal-close-modern" onclick="closeModal('modalCidade')">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body-modern">
                 <form id="formCidade" onsubmit="saveCidade(event)">
                     <input type="hidden" id="cidadeId">
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="cidadeNome">Nome *</label>
-                        <input type="text" id="cidadeNome" class="input" required>
+                        <input type="text" id="cidadeNome" class="input-modern" required>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="cidadeEstado">Estado (UF) *</label>
-                        <input type="text" id="cidadeEstado" class="input" required maxlength="2"
+                        <input type="text" id="cidadeEstado" class="input-modern" required maxlength="2"
                                style="text-transform: uppercase;" placeholder="SP">
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="cidadeObservacoes">Observações</label>
-                        <textarea id="cidadeObservacoes" class="input" rows="3"></textarea>
+                        <textarea id="cidadeObservacoes" class="input-modern" rows="3"></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label>
+                    <div class="form-group-modern checkbox-group">
+                        <label class="checkbox-label">
                             <input type="checkbox" id="cidadeAtiva" checked>
-                            Ativa
+                            <span>Ativa</span>
                         </label>
                     </div>
 
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('modalCidade')">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    <div class="modal-actions-modern">
+                        <button type="button" class="btn-secondary-modern" onclick="closeModal('modalCidade')">Cancelar</button>
+                        <button type="submit" class="btn-primary-modern">Salvar</button>
                     </div>
                 </form>
             </div>
@@ -253,33 +204,33 @@
 
     <!-- Modal SLA -->
     <div id="modalSLA" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content modal-modern">
+            <div class="modal-header-modern">
                 <h2>Editar SLA</h2>
-                <button class="modal-close" onclick="closeModal('modalSLA')">&times;</button>
+                <button class="modal-close-modern" onclick="closeModal('modalSLA')">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body-modern">
                 <form id="formSLA" onsubmit="saveSLA(event)">
                     <input type="hidden" id="slaId">
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="slaPrioridade">Prioridade</label>
-                        <input type="text" id="slaPrioridade" class="input" disabled>
+                        <input type="text" id="slaPrioridade" class="input-modern" disabled>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="slaTempo">Tempo (dias) *</label>
-                        <input type="number" id="slaTempo" class="input" required min="1">
+                        <input type="number" id="slaTempo" class="input-modern" required min="1">
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group-modern">
                         <label for="slaDescricao">Descrição</label>
-                        <textarea id="slaDescricao" class="input" rows="3"></textarea>
+                        <textarea id="slaDescricao" class="input-modern" rows="3"></textarea>
                     </div>
 
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('modalSLA')">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    <div class="modal-actions-modern">
+                        <button type="button" class="btn-secondary-modern" onclick="closeModal('modalSLA')">Cancelar</button>
+                        <button type="submit" class="btn-primary-modern">Salvar</button>
                     </div>
                 </form>
             </div>
@@ -287,7 +238,7 @@
     </div>
 
     <!-- Loading -->
-    <div id="loading" class="loading" style="display: none;">
+    <div id="loading" class="loading-overlay" style="display: none;">
         <div class="spinner"></div>
         <p>Processando...</p>
     </div>
